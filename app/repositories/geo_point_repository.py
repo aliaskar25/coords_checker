@@ -1,4 +1,4 @@
-from sqlalchemy import exists, select, or_
+from sqlalchemy import exists, select, or_, and_
 from sqlalchemy.ext.asyncio import async_scoped_session
 
 
@@ -21,7 +21,7 @@ class GeoPointRepository:
         async with self.session_factory() as session:
             search_terms = request_geo_point_by_name.name.split()
             query = select(self._model).where(
-                or_(*[self._model.display_name.ilike(f'%{term}%') for term in search_terms])
+                and_(*[self._model.display_name.ilike(f'%{term}%') for term in search_terms])
             )
 
             # query = select(self._model).where(
@@ -51,6 +51,12 @@ class GeoPointRepository:
             result = await session.execute(geo_point)
             _exists = result.scalar()
             return bool(_exists)
+        
+    async def get_geo_points_by_place_id(self, place_id: int):
+        async with self.session_factory() as session:
+            query = select(self._model).where(self._model.place_id == place_id)
+            geo_point = await session.scalar(query)
+            return geo_point
         
     async def create_geo_point(self, geo_point_data: GeoPointModel) -> GeoPoint:
         async with self.session_factory() as session:

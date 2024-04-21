@@ -27,20 +27,27 @@ class GeoPointService:
         )
         if not geo_points:
             geo_points = GeoPointsListResponse(geo_points=[])
-            geo_points_data = await self._geo_data_api_client.fetch_forward_geocode(request_geo_point_by_name.name)
+            geo_points_data = await self._geo_data_api_client.fetch_forward_geocode(
+                request_geo_point_by_name.name
+            )
             for geo in geo_points_data:
                 if await self._geo_point_repository.geo_point_exists(geo['place_id']):
-                    continue
-                geo_point = await self._geo_point_repository.create_geo_point(GeoPointModel(
-                    place_id=geo['place_id'],
-                    lat=geo['lat'],
-                    lon=geo['lon'],
-                    display_name=geo['display_name'],
-                    geo_class=geo['class'],
-                    geo_type=geo['type'],
-                    importance=geo['importance']
-                ))
-                geo_points.geo_points.append(geo_point)
+                    geo_points.geo_points.append(
+                        await self._geo_point_repository.get_geo_points_by_place_id(
+                            geo['place_id']
+                        )
+                    )
+                else:
+                    geo_point = await self._geo_point_repository.create_geo_point(GeoPointModel(
+                        place_id=geo['place_id'],
+                        lat=geo['lat'],
+                        lon=geo['lon'],
+                        display_name=geo['display_name'],
+                        geo_class=geo['class'],
+                        geo_type=geo['type'],
+                        importance=geo['importance']
+                    ))
+                    geo_points.geo_points.append(geo_point)
         return geo_points
     
     async def get_geo_by_lan_lat(
